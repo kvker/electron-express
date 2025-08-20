@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RS485通信中间层 - 说明文档</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 30px;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f9f9f9;
+    }
+
+    .container {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+    }
+
+    h1 {
+      color: #2c3e50;
+      margin-top: 0;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #3498db;
+    }
+
+    h2 {
+      color: #3498db;
+      margin-top: 30px;
+      margin-bottom: 15px;
+    }
+
+    .feature-box {
+      background-color: #f8f9fa;
+      border-left: 4px solid #3498db;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 0 4px 4px 0;
+    }
+
+    .highlight {
+      background-color: #e8f4fc;
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-family: monospace;
+      font-weight: bold;
+    }
+
+    .debug-link {
+      display: inline-block;
+      margin-top: 30px;
+      background-color: #3498db;
+      color: white;
+      padding: 12px 25px;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+
+    .debug-link:hover {
+      background-color: #2980b9;
+    }
+
+    .mapping-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+
+    .mapping-table th, .mapping-table td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .mapping-table th {
+      background-color: #3498db;
+      color: white;
+    }
+
+    .mapping-table tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+
+    .special-row {
+      background-color: #e8f4fc !important;
+      font-weight: bold;
+    }
+
+    .footer {
+      margin-top: 40px;
+      text-align: center;
+      color: #7f8c8d;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>RS485硬件与游戏软件通信中间层</h1>
+
+    <div class="feature-box">
+      <p>这是一个专为RS485硬件与游戏软件设计的通信中间层，提供了全自主的键值对映射功能，支持<span class="highlight">00-FF</span>共256种映射。</p>
+    </div>
+
+    <h2>系统特点</h2>
+    <ul>
+      <li>提供全自主的键值对映射，支持<span class="highlight">00-FF</span>共256种映射</li>
+      <li>简单易用的接口，便于游戏软件与硬件设备进行交互</li>
+      <li>内置调试工具，方便开发和测试</li>
+    </ul>
+
+    <h2>键值映射说明</h2>
+    <p>系统支持256种映射（<span class="highlight">00-FF</span>），所有值均可自定义映射，以满足不同游戏和硬件的需求。</p>
+
+    <div class="mapping-table-container">
+      <table class="mapping-table">
+        <tr>
+          <th>十六进制值</th>
+          <th>用途</th>
+          <th>说明</th>
+        </tr>
+        <tr>
+          <td>00-FF</td>
+          <td>业务数据</td>
+          <td>可自定义映射，用于传输各种控制信号和数据</td>
+        </tr>
+      </table>
+    </div>
+
+    <h2>使用场景</h2>
+    <p>本通信中间层适用于以下场景：</p>
+    <ul>
+      <li>游戏厅设备与游戏软件的通信</li>
+      <li>自定义游戏控制器与PC游戏的连接</li>
+      <li>模拟器与实体硬件的交互</li>
+      <li>其他需要RS485通信的游戏相关应用</li>
+    </ul>
+
+    <div class="footer">
+      <p>© 2025 RS485通信中间层 | 版本 1.0</p>
+    </div>
+  </div>
+</body>
+
+</html>
