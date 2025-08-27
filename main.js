@@ -33,16 +33,20 @@ function createWindow() {
   win.webContents.session.clearStorageData()
 
   // 加载本地 HTML 文件
-  win.loadFile('game/index.html')
-  
+  if(IS_DEVELOPMENT) {
+    win.loadFile('test/index.html')
+  } else {
+    win.loadFile('game/index.html')
+  }
+
   // 开发时打开 DevTools
-  if (IS_DEVELOPMENT) {
+  if(IS_DEVELOPMENT) {
     win.webContents.openDevTools()
-    
+
     win.webContents.on('devtools-opened', () => {
       console.log('[Electron] DevTools opened')
     })
-    
+
     win.webContents.executeJavaScript(`
       console.log('[Renderer] DevTools ready for debugging');
       window.debugLog = (msg) => console.log('[Debug]', msg);
@@ -57,10 +61,10 @@ function createWindow() {
 // ================================
 function startRoomService() {
   console.log('[Main] Starting room service...')
-  
+
   const success = roomService.startRoomService(DEFAULT_PORT, DEFAULT_HOST_IP)
-  
-  if (success) {
+
+  if(success) {
     console.log('[Main] Room service started successfully')
   } else {
     console.error('[Main] Failed to start room service')
@@ -74,22 +78,22 @@ app.whenReady().then(() => {
   // 设置应用缓存目录
   const userDataPath = path.join(__dirname, 'userData')
   app.setPath('userData', userDataPath)
-  
+
   // 启动房间服务
   startRoomService()
-  
+
   // 创建窗口
   createWindow()
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
+    if(BrowserWindow.getAllWindows().length === 0) {
       createWindow()
     }
   })
 })
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+  if(process.platform !== 'darwin') {
     app.quit()
   }
 })

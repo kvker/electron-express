@@ -1,407 +1,323 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Express + Electron 游戏服务器</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            min-height: 100vh;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 30px;
-            border-radius: 15px;
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        }
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-            color: #fff;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-        }
-        .config-section {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        input, select {
-            width: 100%;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            background: rgba(255, 255, 255, 0.9);
-            color: #333;
-        }
-        button {
-            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 16px;
-            margin: 5px;
-            transition: transform 0.2s;
-        }
-        button:hover {
-            transform: translateY(-2px);
-        }
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .status {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-        }
-        .log {
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px;
-            border-radius: 8px;
-            max-height: 300px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-        }
-        .data-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-top: 20px;
-        }
-        .success { color: #4CAF50; }
-        .error { color: #f44336; }
-        .info { color: #2196F3; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>房间服务测试页面</title>
+  <style>
+    body {
+      font-family: 'Microsoft YaHei', Arial, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .section {
+      margin-bottom: 30px;
+      padding: 20px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      background: #fafafa;
+    }
+
+    .section h3 {
+      color: #555;
+      margin-top: 0;
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    input,
+    button {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    input {
+      width: 200px;
+    }
+
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .log {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 5px;
+      padding: 15px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+    }
+
+    .success {
+      color: #28a745;
+    }
+
+    .error {
+      color: #dc3545;
+    }
+
+    .info {
+      color: #17a2b8;
+    }
+
+    .warning {
+      color: #ffc107;
+    }
+  </style>
 </head>
+
 <body>
-    <div class="container">
-        <h1>🚀 Express + Electron 游戏服务器</h1>
-        
-        <!-- 应用配置 -->
-        <div class="config-section">
-            <h3>⚙️ 应用配置</h3>
-            <div class="form-group">
-                <label for="role">角色选择:</label>
-                <select id="role">
-                    <option value="">请选择角色</option>
-                    <option value="host">主机 (Host)</option>
-                    <option value="client">客户端 (Client)</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="hostIP">主机IP地址:</label>
-                <input type="text" id="hostIP" value="127.0.0.1" placeholder="输入主机IP地址">
-            </div>
-            <div class="form-group">
-                <label for="port">端口号:</label>
-                <input type="number" id="port" value="3000" placeholder="输入端口号">
-            </div>
-            <button onclick="setAppConfig()">应用配置</button>
-            <button onclick="getAppConfig()">获取配置</button>
-        </div>
+  <div class="container">
+    <h1>🏠 房间服务测试页面</h1>
 
-        <!-- 房间管理 -->
-        <div class="config-section">
-            <h3>🏠 房间管理</h3>
-            <div id="roomStatus" class="status" style="display: none;">
-                <strong>房间状态:</strong> <span id="roomInfo">未连接</span>
-            </div>
-            <button onclick="getRoomStatus()" id="getStatusBtn" disabled>获取房间状态</button>
-            <button onclick="resetRoom()" id="resetBtn" disabled>重置房间</button>
-        </div>
-
-        <!-- 数据操作 -->
-        <div class="data-section">
-            <div class="config-section">
-                <h3>📤 提交数据</h3>
-                <div class="form-group">
-                    <label for="playerId">玩家ID:</label>
-                    <input type="text" id="playerId" value="player1" placeholder="输入玩家ID">
-                </div>
-                <div class="form-group">
-                    <label for="dataType">数据类型:</label>
-                    <input type="text" id="dataType" value="score" placeholder="输入数据类型">
-                </div>
-                <div class="form-group">
-                    <label for="payload">数据内容 (JSON):</label>
-                    <input type="text" id="payload" value='{"value": 100}' placeholder="输入JSON数据">
-                </div>
-                <button onclick="submitData()">提交数据</button>
-                <button onclick="submitDataToHost()">提交到主机</button>
-            </div>
-
-            <div class="config-section">
-                <h3>📥 获取数据</h3>
-                <div class="form-group">
-                    <label for="getPlayerId">玩家ID (可选):</label>
-                    <input type="text" id="getPlayerId" placeholder="留空获取所有数据">
-                </div>
-                <div class="form-group">
-                    <label for="getDataType">数据类型 (可选):</label>
-                    <input type="text" id="getDataType" placeholder="留空获取所有类型">
-                </div>
-                <button onclick="getData()">获取数据</button>
-            </div>
-        </div>
-
-        <!-- 日志显示 -->
-        <div class="config-section">
-            <h3>📋 操作日志</h3>
-            <div id="log" class="log"></div>
-            <button onclick="clearLog()">清空日志</button>
-        </div>
+    <!-- 房间管理 -->
+    <div class="section">
+      <h3>🏠 房间管理</h3>
+      <div class="form-group">
+        <label>玩家ID:</label>
+        <input type="text" id="playerId" placeholder="输入玩家ID" value="player1">
+      </div>
+      <div class="form-group">
+        <label>玩家名称:</label>
+        <input type="text" id="playerName" placeholder="输入玩家名称" value="玩家1">
+      </div>
+      <button onclick="joinRoom()">加入房间</button>
+      <button onclick="queryRoom()">查询房间</button>
+      <button onclick="recreateRoom()">重新创建房间</button>
     </div>
 
-    <script>
-        // 全局变量
-        let currentConfig = null;
-        let isHost = false;
+    <!-- 数据操作 -->
+    <div class="section">
+      <h3>📊 数据操作</h3>
+      <div class="form-group">
+        <label>数据类型:</label>
+        <input type="text" id="dataType" placeholder="输入数据类型" value="score">
+      </div>
+      <div class="form-group">
+        <label>数据内容:</label>
+        <input type="text" id="payload" placeholder="输入数据内容" value="100">
+      </div>
+      <button onclick="submitData()">提交数据</button>
+      <button onclick="queryData()">查询数据</button>
+    </div>
 
-        // 日志函数
-        function log(message, type = 'info') {
-            const logDiv = document.getElementById('log');
-            const timestamp = new Date().toLocaleTimeString();
-            const logEntry = document.createElement('div');
-            logEntry.className = type;
-            logEntry.innerHTML = `[${timestamp}] ${message}`;
-            logDiv.appendChild(logEntry);
-            logDiv.scrollTop = logDiv.scrollHeight;
+    <!-- 系统状态 -->
+    <div class="section">
+      <h3>🔍 系统状态</h3>
+      <button onclick="healthCheck()">健康检查</button>
+    </div>
+
+    <!-- 日志显示 -->
+    <div class="section">
+      <h3>📝 操作日志</h3>
+      <div id="log" class="log"></div>
+      <button onclick="clearLog()">清空日志</button>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:3000'
+
+    // 日志管理
+    function log(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString()
+      const logElement = document.getElementById('log')
+      const logEntry = `[${timestamp}] ${message}\n`
+
+      logElement.textContent += logEntry
+      logElement.scrollTop = logElement.scrollHeight
+
+      console.log(`[${type.toUpperCase()}] ${message}`)
+    }
+
+    function clearLog() {
+      document.getElementById('log').textContent = ''
+      log('日志已清空', 'info')
+    }
+
+    // API 调用函数 - 简化版本
+    async function apiCall(endpoint, options = {}) {
+      try {
+        const response = await fetch(`${API_BASE}${endpoint}`, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          ...options
+        })
+
+        const result = await response.json()
+
+        // 新的返回值格式：直接返回data，出错时返回null
+        if(result.data !== undefined) {
+          // 成功：有data字段
+          log(`✅ ${endpoint}: ${JSON.stringify(result.data, null, 2)}`, 'success')
+          return result.data
+        } else if(result.message) {
+          // 失败：有message字段
+          log(`❌ ${endpoint}: ${result.message}`, 'error')
+          return null
+        } else {
+          // 未知格式
+          log(`⚠️ ${endpoint}: 未知响应格式 - ${JSON.stringify(result, null, 2)}`, 'warning')
+          return null
         }
 
-        // 清空日志
-        function clearLog() {
-            document.getElementById('log').innerHTML = '';
+      } catch(error) {
+        log(`❌ ${endpoint}: 网络错误 - ${error.message}`, 'error')
+        return null
+      }
+    }
+
+    // 房间管理功能
+    async function joinRoom() {
+      const playerId = document.getElementById('playerId').value
+      const playerName = document.getElementById('playerName').value
+
+      if(!playerId || !playerName) {
+        log('请输入玩家ID和名称', 'warning')
+        return
+      }
+
+      const playerCount = await apiCall('/api/room/join', {
+        method: 'POST',
+        body: JSON.stringify({ playerId, playerName })
+      })
+
+      if(playerCount !== null) {
+        log(`玩家 ${playerName} 成功加入房间，当前玩家数: ${playerCount}`, 'success')
+      }
+    }
+
+    async function queryRoom() {
+      const players = await apiCall('/api/room/query')
+
+      if(players !== null) {
+        log(`房间查询成功 - 玩家数: ${players.length}`, 'success')
+        if(players.length > 0) {
+          log(`玩家列表: ${players.map(p => p.name).join(', ')}`, 'info')
         }
+      }
+    }
 
-        // 设置应用配置
-        async function setAppConfig() {
-            const role = document.getElementById('role').value;
-            const hostIP = document.getElementById('hostIP').value;
-            const port = parseInt(document.getElementById('port').value);
+    async function recreateRoom() {
+      const result = await apiCall('/api/room/recreate', {
+        method: 'POST'
+      })
 
-            if (!role) {
-                log('请选择角色', 'error');
-                return;
-            }
+      if(result !== null) {
+        log('房间重新创建成功', 'success')
+      }
+    }
 
-            try {
-                const config = { role, hostIP, port };
-                const result = await window.electronAPI.setAppConfig(config);
-                
-                if (result.success) {
-                    currentConfig = config;
-                    isHost = (role === 'host');
-                    
-                    // 更新UI状态
-                    document.getElementById('getStatusBtn').disabled = !isHost;
-                    document.getElementById('resetBtn').disabled = !isHost;
-                    
-                    if (isHost) {
-                        document.getElementById('roomStatus').style.display = 'block';
-                        document.getElementById('roomInfo').textContent = `主机模式 - 房间ID: ${result.roomId}`;
-                        log(`配置成功: ${role} 模式, 房间ID: ${result.roomId}`, 'success');
-                    } else {
-                        document.getElementById('roomStatus').style.display = 'none';
-                        log(`配置成功: ${role} 模式`, 'success');
-                    }
-                } else {
-                    log(`配置失败: ${result.error}`, 'error');
-                }
-            } catch (error) {
-                log(`配置错误: ${error.message}`, 'error');
-            }
+    // 数据操作功能
+    async function submitData() {
+      const playerId = document.getElementById('playerId').value
+      const dataType = document.getElementById('dataType').value
+      const payload = document.getElementById('payload').value
+
+      if(!playerId || !dataType) {
+        log('请输入玩家ID和数据类型', 'warning')
+        return
+      }
+
+      const dataKey = await apiCall('/api/data/submit', {
+        method: 'POST',
+        body: JSON.stringify({ playerId, dataType, payload })
+      })
+
+      if(dataKey !== null) {
+        log(`数据提交成功 - 键: ${dataKey}`, 'success')
+      }
+    }
+
+    // 查询数据
+    async function queryData() {
+      const data = await apiCall('/api/data/query')
+
+      if(data !== null) {
+        const totalCount = Object.keys(data).length
+        log(`查询数据成功 - 总数: ${totalCount}`, 'success')
+        if(totalCount > 0) {
+          log(`数据内容: ${JSON.stringify(data, null, 2)}`, 'info')
+        } else {
+          log('当前房间中没有数据', 'info')
         }
+      }
+    }
 
-        // 获取应用配置
-        async function getAppConfig() {
-            try {
-                const config = await window.electronAPI.getAppConfig();
-                log(`当前配置: ${JSON.stringify(config)}`, 'info');
-            } catch (error) {
-                log(`获取配置失败: ${error.message}`, 'error');
-            }
-        }
+    // 系统功能
+    async function healthCheck() {
+      const result = await apiCall('/health')
 
-        // 获取房间状态
-        async function getRoomStatus() {
-            if (!isHost) {
-                log('只有主机可以获取房间状态', 'error');
-                return;
-            }
+      if(result !== null) {
+        log('健康检查成功 - 服务正常运行', 'success')
+      }
+    }
 
-            try {
-                const status = await window.electronAPI.getRoomStatus();
-                if (status.success) {
-                    log(`房间状态: 玩家数 ${status.playerCount}, 数据数 ${status.dataCount}`, 'success');
-                    log(`房间ID: ${status.roomId}`, 'info');
-                    if (status.players.length > 0) {
-                        log(`玩家列表: ${status.players.map(p => p.name).join(', ')}`, 'info');
-                    }
-                } else {
-                    log(`获取房间状态失败: ${status.error}`, 'error');
-                }
-            } catch (error) {
-                log(`获取房间状态错误: ${error.message}`, 'error');
-            }
-        }
-
-        // 重置房间
-        async function resetRoom() {
-            if (!isHost) {
-                log('只有主机可以重置房间', 'error');
-                return;
-            }
-
-            try {
-                const result = await window.electronAPI.resetRoom();
-                if (result.success) {
-                    log(`房间已重置, 新房间ID: ${result.roomId}`, 'success');
-                    document.getElementById('roomInfo').textContent = `主机模式 - 房间ID: ${result.roomId}`;
-                } else {
-                    log(`重置房间失败: ${result.error}`, 'error');
-                }
-            } catch (error) {
-                log(`重置房间错误: ${error.message}`, 'error');
-            }
-        }
-
-        // 提交数据
-        async function submitData() {
-            if (!isHost) {
-                log('只有主机可以本地提交数据', 'error');
-                return;
-            }
-
-            const playerId = document.getElementById('playerId').value;
-            const dataType = document.getElementById('dataType').value;
-            const payload = document.getElementById('payload').value;
-
-            if (!playerId || !dataType) {
-                log('请填写玩家ID和数据类型', 'error');
-                return;
-            }
-
-            try {
-                let payloadObj;
-                try {
-                    payloadObj = JSON.parse(payload);
-                } catch (e) {
-                    payloadObj = payload; // 如果不是有效JSON，直接使用字符串
-                }
-
-                const data = { playerId, dataType, payload: payloadObj };
-                const result = await window.electronAPI.submitData(data);
-                
-                if (result.success) {
-                    log(`数据提交成功: ${playerId} - ${dataType}`, 'success');
-                } else {
-                    log(`数据提交失败: ${result.error}`, 'error');
-                }
-            } catch (error) {
-                log(`提交数据错误: ${error.message}`, 'error');
-            }
-        }
-
-        // 提交数据到主机
-        async function submitDataToHost() {
-            if (isHost) {
-                log('主机不需要提交到主机', 'error');
-                return;
-            }
-
-            const playerId = document.getElementById('playerId').value;
-            const dataType = document.getElementById('dataType').value;
-            const payload = document.getElementById('payload').value;
-
-            if (!playerId || !dataType) {
-                log('请填写玩家ID和数据类型', 'error');
-                return;
-            }
-
-            try {
-                let payloadObj;
-                try {
-                    payloadObj = JSON.parse(payload);
-                } catch (e) {
-                    payloadObj = payload;
-                }
-
-                const data = { playerId, dataType, payload: payloadObj };
-                const result = await window.electronAPI.submitDataToHost(data);
-                
-                if (result.success) {
-                    log(`数据提交到主机成功: ${playerId} - ${dataType}`, 'success');
-                } else {
-                    log(`数据提交到主机失败: ${result.error}`, 'error');
-                }
-            } catch (error) {
-                log(`提交数据到主机错误: ${error.message}`, 'error');
-            }
-        }
-
-        // 获取数据
-        async function getData() {
-            const playerId = document.getElementById('getPlayerId').value;
-            const dataType = document.getElementById('getDataType').value;
-
-            const params = {};
-            if (playerId) params.playerId = playerId;
-            if (dataType) params.dataType = dataType;
-
-            try {
-                const result = await window.electronAPI.getData(params);
-                if (result.success) {
-                    log(`获取数据成功: 共 ${result.totalCount} 条`, 'success');
-                    log(`数据内容: ${JSON.stringify(result.data, null, 2)}`, 'info');
-                } else {
-                    log(`获取数据失败: ${result.error}`, 'error');
-                }
-            } catch (error) {
-                log(`获取数据错误: ${error.message}`, 'error');
-            }
-        }
-
-        // 事件监听器
-        window.electronAPI.onPlayerJoined((event, data) => {
-            log(`新玩家加入: ${data.playerName} (ID: ${data.playerId})`, 'success');
-        });
-
-        window.electronAPI.onDataSubmitted((event, data) => {
-            log(`收到新数据: ${data.playerId} - ${data.dataType}`, 'info');
-        });
-
-        window.electronAPI.onRoomReset((event, data) => {
-            log(`房间已重置: ${data.roomId}`, 'info');
-            document.getElementById('roomInfo').textContent = `主机模式 - 房间ID: ${data.roomId}`;
-        });
-
-        // 页面加载完成后的初始化
-        document.addEventListener('DOMContentLoaded', () => {
-            log('页面加载完成，可以开始配置应用', 'info');
-        });
-    </script>
+    // 页面加载完成后的初始化
+    document.addEventListener('DOMContentLoaded', function () {
+      log('页面加载完成，房间服务测试开始', 'info')
+      log('API基础地址: ' + API_BASE, 'info')
+      log('新的返回值格式说明:', 'info')
+      log('  - 成功时返回: data字段的值', 'info')
+      log('  - 失败时返回: null', 'info')
+      log('  - 错误信息在日志中显示', 'info')
+      log('可用功能:', 'info')
+      log('  - 加入房间: 设置玩家ID和名称，点击"加入房间"', 'info')
+      log('  - 查询房间: 查看当前房间状态和玩家列表', 'info')
+      log('  - 重新创建: 清空房间数据，重新开始', 'info')
+      log('  - 提交数据: 提交玩家数据到房间', 'info')
+      log('  - 查询数据: 获取房间中的所有数据', 'info')
+      log('  - 健康检查: 检查服务状态', 'info')
+    });
+  </script>
 </body>
+
 </html>
