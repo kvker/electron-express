@@ -128,9 +128,9 @@
         <label>玩家名称:</label>
         <input type="text" id="playerName" placeholder="输入玩家名称" value="玩家1">
       </div>
-      <button onclick="joinRoom()">加入房间</button>
-      <button onclick="queryRoom()">查询房间</button>
-      <button onclick="recreateRoom()">重新创建房间</button>
+      <button onclick="testJoinRoom()">加入房间</button>
+      <button onclick="testQueryRoom()">查询房间</button>
+      <button onclick="testRecreateRoom()">重新创建房间</button>
     </div>
 
     <!-- 数据操作 -->
@@ -144,14 +144,14 @@
         <label>数据内容:</label>
         <input type="text" id="payload" placeholder="输入数据内容" value="100">
       </div>
-      <button onclick="submitData()">提交数据</button>
-      <button onclick="queryData()">查询数据</button>
+      <button onclick="testSubmitData()">提交数据</button>
+      <button onclick="testQueryData()">查询数据</button>
     </div>
 
     <!-- 系统状态 -->
     <div class="section">
       <h3>🔍 系统状态</h3>
-      <button onclick="healthCheck()">健康检查</button>
+      <button onclick="testHealthCheck()">健康检查</button>
     </div>
 
     <!-- 日志显示 -->
@@ -163,159 +163,314 @@
   </div>
 
   <script>
-    const API_BASE = 'http://localhost:3000'
+    // ================================
+    // 房间服务客户端 - IIFE封装
+    // ================================
+    (function () {
+      'use strict'
 
-    // 日志管理
-    function log(message, type = 'info') {
-      const timestamp = new Date().toLocaleTimeString()
-      const logElement = document.getElementById('log')
-      const logEntry = `[${timestamp}] ${message}\n`
+      // 默认配置
+      const DEFAULT_CONFIG = {
+        hostname: 'localhost',
+        port: 3000,
+        protocol: 'http',
+        timeout: 10000,
+        retryCount: 3,
+        retryDelay: 1000
+      }
 
-      logElement.textContent += logEntry
-      logElement.scrollTop = logElement.scrollHeight
+      // 内部状态
+      let config = { ...DEFAULT_CONFIG }
+      let isInitialized = false
 
-      console.log(`[${type.toUpperCase()}] ${message}`)
-    }
+      // 日志函数
+      function log(message, type = 'info') {
+        const timestamp = new Date().toLocaleTimeString()
+        const logElement = document.getElementById('log')
+        if(logElement) {
+          const logEntry = `[${timestamp}] ${message}\n`
+          logElement.textContent += logEntry
+          logElement.scrollTop = logElement.scrollHeight
+        }
+        console.log(`[RoomService] [${type.toUpperCase()}] ${message}`)
+      }
 
-    function clearLog() {
-      document.getElementById('log').textContent = ''
-      log('日志已清空', 'info')
-    }
+      // 获取API基础URL
+      function getApiBaseUrl() {
+        return `${config.protocol}://${config.hostname}:${config.port}`
+      }
 
-    // API 调用函数 - 简化版本
-    async function apiCall(endpoint, options = {}) {
-      try {
-        const response = await fetch(`${API_BASE}${endpoint}`, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          ...options
-        })
+      // 带重试的fetch请求
+      async function fetchWithRetry(url, options = {}, retryCount = config.retryCount) {
+        try {
+          const response = await fetch(url, {
+            ...options,
+            signal: AbortSignal.timeout(config.timeout)
+          })
 
-        const result = await response.json()
+          if(!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+          }
 
-        // 新的返回值格式：直接返回data，出错时返回null
-        if(result.data !== undefined) {
-          // 成功：有data字段
-          log(`✅ ${endpoint}: ${JSON.stringify(result.data, null, 2)}`, 'success')
-          return result.data
-        } else if(result.message) {
-          // 失败：有message字段
-          log(`❌ ${endpoint}: ${result.message}`, 'error')
+          return await response.json()
+        } catch(error) {
+          if(retryCount > 0 && error.name !== 'AbortError') {
+            log(`请求失败，${config.retryDelay}ms后重试 (剩余重试次数: ${retryCount})`, 'warning')
+            await new Promise(resolve => setTimeout(resolve, config.retryDelay))
+            return fetchWithRetry(url, options, retryCount - 1)
+          }
+          throw error
+        }
+      }
+
+      // API调用函数
+      async function apiCall(endpoint, options = {}) {
+        try {
+          const url = `${getApiBaseUrl()}${endpoint}`
+          const result = await fetchWithRetry(url, {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            ...options
+          })
+
+          // 新的返回值格式：直接返回data，出错时返回null
+          if(result.data !== undefined) {
+            log(`✅ ${endpoint}: ${JSON.stringify(result.data, null, 2)}`, 'success')
+            return result.data
+          } else if(result.message) {
+            log(`❌ ${endpoint}: ${result.message}`, 'error')
+            return null
+          } else {
+            log(`⚠️ ${endpoint}: 未知响应格式 - ${JSON.stringify(result, null, 2)}`, 'warning')
+            return null
+          }
+
+        } catch(error) {
+          log(`❌ ${endpoint}: 网络错误 - ${error.message}`, 'error')
           return null
-        } else {
-          // 未知格式
-          log(`⚠️ ${endpoint}: 未知响应格式 - ${JSON.stringify(result, null, 2)}`, 'warning')
+        }
+      }
+
+      // ================================
+      // 房间管理API
+      // ================================
+
+      // 加入房间
+      async function joinRoom(playerId, playerName) {
+        if(!playerId || !playerName) {
+          log('Missing playerId or playerName', 'error')
           return null
         }
 
-      } catch(error) {
-        log(`❌ ${endpoint}: 网络错误 - ${error.message}`, 'error')
-        return null
+        return await apiCall('/api/room/join', {
+          method: 'POST',
+          body: JSON.stringify({ playerId, playerName })
+        })
       }
+
+      // 查询房间
+      async function queryRoom() {
+        return await apiCall('/api/room/query')
+      }
+
+      // 重新创建房间
+      async function recreateRoom() {
+        return await apiCall('/api/room/recreate', {
+          method: 'POST'
+        })
+      }
+
+      // ================================
+      // 数据操作API
+      // ================================
+
+      // 提交数据
+      async function submitData(playerId, dataType, payload) {
+        if(!playerId || !dataType) {
+          log('Missing playerId or dataType', 'error')
+          return null
+        }
+
+        return await apiCall('/api/data/submit', {
+          method: 'POST',
+          body: JSON.stringify({ playerId, dataType, payload })
+        })
+      }
+
+      // 查询数据
+      async function queryData() {
+        return await apiCall('/api/data/query')
+      }
+
+      // ================================
+      // 系统API
+      // ================================
+
+      // 健康检查
+      async function healthCheck() {
+        return await apiCall('/health')
+      }
+
+      // ================================
+      // 配置和初始化
+      // ================================
+
+      // 初始化配置
+      function init(configOverrides = {}) {
+        config = { ...DEFAULT_CONFIG, ...configOverrides }
+        isInitialized = true
+
+        log(`房间服务初始化完成 - ${getApiBaseUrl()}`, 'info')
+        log(`配置: ${JSON.stringify(config, null, 2)}`, 'info')
+
+        return true
+      }
+
+      // 获取当前配置
+      function getConfig() {
+        return { ...config }
+      }
+
+      // 更新配置
+      function updateConfig(newConfig) {
+        config = { ...config, ...newConfig }
+        log(`配置已更新: ${JSON.stringify(config, null, 2)}`, 'info')
+      }
+
+      // 获取服务状态
+      function getStatus() {
+        return {
+          isInitialized,
+          config: { ...config },
+          apiBaseUrl: getApiBaseUrl()
+        }
+      }
+
+      // ================================
+      // 对外暴露的API
+      // ================================
+
+      // 暴露到window对象
+      window.RoomService = {
+        // 配置管理
+        init,
+        getConfig,
+        updateConfig,
+        getStatus,
+
+        // 房间管理
+        joinRoom,
+        queryRoom,
+        recreateRoom,
+
+        // 数据操作
+        submitData,
+        queryData,
+
+        // 系统
+        healthCheck,
+
+        // 日志
+        log
+      }
+
+      // 自动初始化（使用默认配置）
+      init()
+
+    })()
+
+    // ================================
+    // 测试函数
+    // ================================
+
+    function clearLog() {
+      document.getElementById('log').textContent = ''
+      RoomService.log('日志已清空', 'info')
     }
 
-    // 房间管理功能
-    async function joinRoom() {
+    async function testJoinRoom() {
       const playerId = document.getElementById('playerId').value
       const playerName = document.getElementById('playerName').value
 
       if(!playerId || !playerName) {
-        log('请输入玩家ID和名称', 'warning')
+        RoomService.log('请输入玩家ID和名称', 'warning')
         return
       }
 
-      const playerCount = await apiCall('/api/room/join', {
-        method: 'POST',
-        body: JSON.stringify({ playerId, playerName })
-      })
-
+      const playerCount = await RoomService.joinRoom(playerId, playerName)
       if(playerCount !== null) {
-        log(`玩家 ${playerName} 成功加入房间，当前玩家数: ${playerCount}`, 'success')
+        RoomService.log(`玩家 ${playerName} 成功加入房间，当前玩家数: ${playerCount}`, 'success')
       }
     }
 
-    async function queryRoom() {
-      const players = await apiCall('/api/room/query')
-
+    async function testQueryRoom() {
+      const players = await RoomService.queryRoom()
       if(players !== null) {
-        log(`房间查询成功 - 玩家数: ${players.length}`, 'success')
+        RoomService.log(`房间查询成功 - 玩家数: ${players.length}`, 'success')
         if(players.length > 0) {
-          log(`玩家列表: ${players.map(p => p.name).join(', ')}`, 'info')
+          RoomService.log(`玩家列表: ${players.map(p => p.name).join(', ')}`, 'info')
         }
       }
     }
 
-    async function recreateRoom() {
-      const result = await apiCall('/api/room/recreate', {
-        method: 'POST'
-      })
-
+    async function testRecreateRoom() {
+      const result = await RoomService.recreateRoom()
       if(result !== null) {
-        log('房间重新创建成功', 'success')
+        RoomService.log('房间重新创建成功', 'success')
       }
     }
 
-    // 数据操作功能
-    async function submitData() {
+    async function testSubmitData() {
       const playerId = document.getElementById('playerId').value
       const dataType = document.getElementById('dataType').value
       const payload = document.getElementById('payload').value
 
       if(!playerId || !dataType) {
-        log('请输入玩家ID和数据类型', 'warning')
+        RoomService.log('请输入玩家ID和数据类型', 'warning')
         return
       }
 
-      const dataKey = await apiCall('/api/data/submit', {
-        method: 'POST',
-        body: JSON.stringify({ playerId, dataType, payload })
-      })
-
+      const dataKey = await RoomService.submitData(playerId, dataType, payload)
       if(dataKey !== null) {
-        log(`数据提交成功 - 键: ${dataKey}`, 'success')
+        RoomService.log(`数据提交成功 - 键: ${dataKey}`, 'success')
       }
     }
 
-    // 查询数据
-    async function queryData() {
-      const data = await apiCall('/api/data/query')
-
+    async function testQueryData() {
+      const data = await RoomService.queryData()
       if(data !== null) {
         const totalCount = Object.keys(data).length
-        log(`查询数据成功 - 总数: ${totalCount}`, 'success')
+        RoomService.log(`查询数据成功 - 总数: ${totalCount}`, 'success')
         if(totalCount > 0) {
-          log(`数据内容: ${JSON.stringify(data, null, 2)}`, 'info')
+          RoomService.log(`数据内容: ${JSON.stringify(data, null, 2)}`, 'info')
         } else {
-          log('当前房间中没有数据', 'info')
+          RoomService.log('当前房间中没有数据', 'info')
         }
       }
     }
 
-    // 系统功能
-    async function healthCheck() {
-      const result = await apiCall('/health')
-
+    async function testHealthCheck() {
+      const result = await RoomService.healthCheck()
       if(result !== null) {
-        log('健康检查成功 - 服务正常运行', 'success')
+        RoomService.log('健康检查成功 - 服务正常运行', 'success')
       }
     }
 
     // 页面加载完成后的初始化
     document.addEventListener('DOMContentLoaded', function () {
-      log('页面加载完成，房间服务测试开始', 'info')
-      log('API基础地址: ' + API_BASE, 'info')
-      log('新的返回值格式说明:', 'info')
-      log('  - 成功时返回: data字段的值', 'info')
-      log('  - 失败时返回: null', 'info')
-      log('  - 错误信息在日志中显示', 'info')
-      log('可用功能:', 'info')
-      log('  - 加入房间: 设置玩家ID和名称，点击"加入房间"', 'info')
-      log('  - 查询房间: 查看当前房间状态和玩家列表', 'info')
-      log('  - 重新创建: 清空房间数据，重新开始', 'info')
-      log('  - 提交数据: 提交玩家数据到房间', 'info')
-      log('  - 查询数据: 获取房间中的所有数据', 'info')
-      log('  - 健康检查: 检查服务状态', 'info')
+      RoomService.log('页面加载完成，房间服务测试开始', 'info')
+      RoomService.log('RoomService已挂载到window对象', 'info')
+      RoomService.log('可用API:', 'info')
+      RoomService.log('  - RoomService.joinRoom(playerId, playerName)', 'info')
+      RoomService.log('  - RoomService.queryRoom()', 'info')
+      RoomService.log('  - RoomService.recreateRoom()', 'info')
+      RoomService.log('  - RoomService.submitData(playerId, dataType, payload)', 'info')
+      RoomService.log('  - RoomService.queryData()', 'info')
+      RoomService.log('  - RoomService.healthCheck()', 'info')
+      RoomService.log('  - RoomService.init(config)', 'info')
+      RoomService.log('  - RoomService.getConfig()', 'info')
+      RoomService.log('  - RoomService.updateConfig(newConfig)', 'info')
     });
   </script>
 </body>
