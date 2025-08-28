@@ -8,7 +8,7 @@ const roomService = require('./service/roomService')
 // ================================
 const DEFAULT_PORT = 3000
 const DEFAULT_HOST_IP = '0.0.0.0'
-const IS_DEVELOPMENT = process.env.NODE_ENV === 'development' || !app.isPackaged
+const IS_DEVELOPMENT = process.env.NODE_ENV === 'development'// || !app.isPackaged
 
 // ================================
 // 创建 Electron 窗口
